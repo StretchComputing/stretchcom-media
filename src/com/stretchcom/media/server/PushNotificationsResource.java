@@ -1,5 +1,17 @@
 package com.stretchcom.media.server;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
+import javapns.Push;
+import javapns.communication.exceptions.CommunicationException;
+import javapns.communication.exceptions.KeystoreException;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.data.Form;
 import org.restlet.data.Parameter;
@@ -11,9 +23,8 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ResourceException;
 import org.restlet.resource.ServerResource;
 
+import com.stretchcom.media.models.Device;
 import com.stretchcom.media.models.PushNotification;
-import com.stretchcom.rskybox.server.ApiStatusCode;
-import com.stretchcom.rskybox.server.Utility;
 
 public class PushNotificationsResource extends ServerResource {
 	private RskyboxClient log = new RskyboxClient(this);
@@ -47,22 +58,104 @@ public class PushNotificationsResource extends ServerResource {
     }
 
     private JsonRepresentation create_push(Representation entity) {
-        JSONObject json = new JsonRepresentation(entity).getJsonObject();
         JSONObject jsonReturn = new JSONObject();
 
         PushNotification pushNotification = null;
-		String apiStatus = ApiStatusCode.SUCCESS;
-        this.setStatus(Status.SUCCESS_CREATED);
-        
         try {
-            if(json.has(PushNotification.TYPE_JSON)) {
-    		} else {
-            	return Utility.apiError(this, ApiStatusCode.TYPE_REQUIRED);
-            }
+        	JsonRepresentation jsonRep = extractPushNotificationFromJson(pushNotification, entity);
+        	if(jsonRep != null) {return jsonRep;}
+        	
+        	sendPush(pushNotification);
         } catch(Exception e) {
 			log.exception("PushNotificationResource:create_push", e.getMessage(), e);
         }
         
-	    return null;
+	    return Utility.apiSuccess(this, jsonReturn, Status.SUCCESS_CREATED);
     }
+    
+    private void sendPush(PushNotification thePushNotification) {
+    	try {
+    		// TODO quick test, production = false
+    		String joeDeviceToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";
+			Push.alert("Hello World!", "ArcMerchantDevCert.p12", "keystore_password", false, joeDeviceToken);
+		} catch (CommunicationException e) {
+			log.debug("communication exception = " + e.getMessage());
+		} catch (KeystoreException e) {
+			log.debug("keystore exception = " + e.getMessage());
+		}
+    }
+    
+    // @Returns null if successful or JsonReprentation that contains the error code
+    private JsonRepresentation extractPushNotificationFromJson(PushNotification pushNotification, Representation entity) {
+        try {
+            JSONObject json = new JsonRepresentation(entity).getJsonObject();
+
+            if(json.has(ApiJson.TYPE)) {
+            	pushNotification.setServerType(json.getString(ApiJson.TYPE));
+            	if(!PushNotification.isTypeValid(pushNotification.getServerType())) {
+            		return Utility.apiError(this, ApiStatusCode.INVALID_TYPE_PARAMETER);
+            	}
+    		} else {
+            	return Utility.apiError(this, ApiStatusCode.TYPE_REQUIRED);
+            }
+            
+            if(json.has(ApiJson.APPLICATION)) {
+            	pushNotification.setApplication(json.getString(ApiJson.APPLICATION));
+            	if(!PushNotification.isApplicationValid(pushNotification.getApplication())) {
+            		return Utility.apiError(this, ApiStatusCode.INVALID_APPLICATION_PARAMETER);
+            	}
+    		} else {
+            	return Utility.apiError(this, ApiStatusCode.APPLICATION_REQUIRED);
+            }
+            
+            if(json.has(ApiJson.DEVICES)) {
+                List<Device> devices = pushNotification.getDevices();
+    			JSONArray devicesJsonArray = json.getJSONArray(ApiJson.DEVICES);
+    			int arraySize = devicesJsonArray.length();
+    			log.debug("devices json array length = " + arraySize);
+    			for(int i=0; i<arraySize; i++) {
+    				JSONObject deviceJsonObj = devicesJsonArray.getJSONObject(i);
+    				Device d = new Device();
+    				
+    				// both Client and DeviceId are required. If either is missing, silently ignore this pair
+    				if(deviceJsonObj.has(ApiJson.CLIENT)) {
+    					d.setClient(deviceJsonObj.getString(ApiJson.CLIENT));
+    	            	if(!PushNotification.isClientValid(d.getClient())) {
+    	            		return Utility.apiError(this, ApiStatusCode.INVALID_CLIENT_PARAMETER);
+    	            	}
+    				} else {
+    					continue;
+    				}
+    				if(deviceJsonObj.has(ApiJson.DEVICE_TOKEN)) {
+    					d.setDeviceToken(deviceJsonObj.getString(ApiJson.DEVICE_TOKEN));
+    				} else {
+    					continue;
+    				}
+    				devices.add(d);
+    			}
+    		} else {
+            	return Utility.apiError(this, ApiStatusCode.DEVICES_REQUIRED);
+            }
+            
+            if(json.has(ApiJson.MESSAGE	)) {
+            	pushNotification.setMessage(json.getString(ApiJson.MESSAGE));
+            	if(pushNotification.getMessage().trim().length() == 0) {
+            		return Utility.apiError(this, ApiStatusCode.INVALID_MESSAGE_PARAMETER);
+            	}
+    		} else {
+            	return Utility.apiError(this, ApiStatusCode.MESSAGE_REQUIRED);
+            }
+        } catch (JSONException e) {
+			log.exception("PushNotificationResource:extractPushNotificationFromJson", e.getMessage(), e);
+            this.setStatus(Status.SERVER_ERROR_INTERNAL);
+            return new JsonRepresentation(new JSONObject());
+        } catch (IOException e) {
+			log.exception("PushNotificationResource:extractPushNotificationFromJson", e.getMessage(), e);
+            this.setStatus(Status.SERVER_ERROR_INTERNAL);
+            return new JsonRepresentation(new JSONObject());
+        } finally {
+        }
+        return null;
+    }
+
 }

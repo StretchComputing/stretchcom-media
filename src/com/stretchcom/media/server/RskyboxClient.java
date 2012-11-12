@@ -46,6 +46,11 @@ public class RskyboxClient {
 	// rSkybox URL https://rskybox-stretchcom.appspot.com/rest/v1/applications/<applicationId>/clientLogs
 	private static final String RSKYBOX_BASE_URL_WITH_SLASH = "https://rskybox-stretchcom.appspot.com/rest/v1/applications/";
 	
+	// Arc Application specific name
+	private static String qualifyName(String theName) {
+		return "Media." + theName;
+	}
+	
 	public static void exception(String theName, String theMessage, Exception theException, Request theRequest, Boolean theIncludeLocalLog) {
 		log(theName, RskyboxLog.EXCEPTION_LEVEL, theMessage, theException, theRequest, theIncludeLocalLog);
 	}
@@ -98,6 +103,9 @@ public class RskyboxClient {
 	// * ERROR and EXCEPTION logs can be enabled/disabled as individual LOGs/insertion points
 	//      (rational: no sense to keep getting the same error if it keeps happening. Also, allows member to control logging volume)
 	public static void log(String theName, String theLevel, String theMessage, Exception theException, Request theRequest, Boolean theIncludeLocalLog) {
+		// qualify the name for this particular Arc application
+		theName = qualifyName(theName);
+		
 		// theLevel must be valid, or pack up our books and go home!
 		if(!RskyboxLog.isLogLevelValid(theLevel)) {
 			log.severe("bad log level = " + theLevel);

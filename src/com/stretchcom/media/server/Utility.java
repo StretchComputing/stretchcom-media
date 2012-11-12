@@ -6,39 +6,57 @@ import java.security.MessageDigest;
 import java.util.logging.Logger;
 
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.restlet.Request;
 import org.restlet.data.Status;
 import org.restlet.ext.json.JsonRepresentation;
-import org.restlet.ext.servlet.ServletUtils;
 import org.restlet.resource.ServerResource;
 
-import com.stretchcom.rskybox.models.Application;
-import com.stretchcom.rskybox.models.User;
-
 public class Utility {
-    private static final Logger log = Logger.getLogger(Utility.class.getName());
+	private static RskyboxClient log = new RskyboxClient();
 
-    public static JsonRepresentation apiError(ServerResource resource, String theApiStatus){
+    public static JsonRepresentation apiError(ServerResource theResource, String theApiStatus){
     	if(theApiStatus == null) {
-    		log.severe("Utility::apiError() illegal parameter");
+    		log.error("Utility.apiError", "illegal parameter");
     	}
     	
-    	log.info("apiError(): apiStatus = " + theApiStatus);
+    	log.debug("apiError(): apiStatus = " + theApiStatus);
     	
     	JSONObject json = new JSONObject();
     	try {
-    		resource.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
-			json.put("apiStatus", theApiStatus);
+    		// HTTP level errors need no further processing.  Application Level error has returned JSON details
+    		if(theResource.getStatus().isSuccess()) {
+        		theResource.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+    			json.put(ApiJson.SUCCESS, false);
+    			JSONArray errorCodesJsonArray = new JSONArray();
+    			JSONObject errorObject = new JSONObject();
+    			errorObject.put(ApiJson.CODE, theApiStatus);
+    			errorObject.put(ApiJson.CATEGORY, ApiJson.BASIC_CATEGORY);
+    			errorCodesJsonArray.put(errorObject);
+    			json.put(ApiJson.ERROR_CODES, errorCodesJsonArray);
+    		}
 		} catch (JSONException e) {
-			log.severe("Utility::apiError()  exception = " + e.getMessage());
+			log.exception("Utility::apiError", "",  e);
 		}
 		return new JsonRepresentation(json);
+	}
+    
+    // JSON object passed in is enhaned with common fields
+    // Success JSON field set to true and an empty ErrorCodes array is returned
+    public static JsonRepresentation apiSuccess(ServerResource theResource, JSONObject theJson, Status theStatus){
+    	try {
+            theResource.setStatus(theStatus);
+			theJson.put(ApiJson.SUCCESS, true);
+			JSONArray errorCodesJsonArray = new JSONArray();
+			theJson.put(ApiJson.ERROR_CODES, errorCodesJsonArray);
+		} catch (JSONException e) {
+			log.exception("Utility::apiError", "",  e);
+		}
+		return new JsonRepresentation(theJson);
 	}
 	
 	public static String extractAllDigits(String theInputString) {
@@ -83,26 +101,6 @@ public class Utility {
 		}
 		return null;
 	}
-	
-	public static String verifyUserAuthorizedForApplication(Request theRequest, String theApplicationId) {
-		log.info("entered verifyUserAuthorizedForApplication()");
-    	String appIdStatus = Application.verifyApplicationId(theApplicationId);
-    	if(!appIdStatus.equalsIgnoreCase(ApiStatusCode.SUCCESS)) {
-    		return appIdStatus;
-    	}
-    	
-    	// TODO access the currentUser which is created by authenticationFilter
-//    	HttpServletRequest servletRequest = ServletUtils.getRequest(getRequest());
-//    	String joeTest = (String)servletRequest.getAttribute(RskyboxApplication.CURRENT_USER);
-    	//appIdStatus = User.verifyUserMemberOfApplication(currentUser.getEmail(), theApplicationId);
-    	
-    	return appIdStatus;
-	}
-	
-	public static User getCurrentUser(Request theRequest) {
-    	HttpServletRequest servletRequest = ServletUtils.getRequest(theRequest);
-    	return (User)servletRequest.getAttribute(RskyboxApplication.CURRENT_USER);
-	}
 
 	public static String encrypt(String thePlainText) {
 		String encryptedText = null;
@@ -120,7 +118,7 @@ public class Utility {
 			// convert encrypted bytes to base64 encoded string so data can be stored in the database
 			encryptedText = Base64.encodeBase64String(raw);
 		} catch (Exception e) {
-			log.severe("Utility::encrypt() exception = " + e.getMessage());
+			log.exception("Utility::encrypt", "",  e);
 		}
 		return encryptedText;
 	}
@@ -154,7 +152,7 @@ public class Utility {
 		try {
 			phraseBase64 = Base64.encodeBase64String(phrase.getBytes("ISO-8859-1"));
 		} catch (UnsupportedEncodingException e) {
-			log.severe("UnsupportedEncodingException::getRskyboxAuthHeader");
+			log.error("Utility.getRskyboxAuthHeader", "UnsupportedEncodingException::getRskyboxAuthHeader");
 			return null;
 		}
 		
