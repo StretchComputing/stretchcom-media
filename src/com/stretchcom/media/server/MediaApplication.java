@@ -39,7 +39,7 @@ public class MediaApplication extends Application {
         // Define routes
         router.attach("/email", EmailResource.class);
         router.attach("/vitals", VitalsResource.class);
-        router.attach("/pushNotifications", PushNotificationsResource.class);
+        router.attach("/rest/v1/pushNotifications", PushNotificationsResource.class);
         
         // authentication requests, then route
         AuthorizationFilter authorizationFilter = new AuthorizationFilter(getContext());

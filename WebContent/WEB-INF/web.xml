@@ -3,7 +3,7 @@
   <display-name>rteam servlet</display-name>
   <context-param>
     <param-name>org.restlet.application</param-name>
-    <param-value>com.stretchcom.rteam.smsServer.RteamApplication</param-value>
+    <param-value>com.stretchcom.media.server.MediaApplication</param-value>
   </context-param>
   <servlet>
     <servlet-name>RestletServlet</servlet-name>

@@ -66,6 +66,11 @@ public class PushNotification {
 		return false;
 	}
 	
+	public boolean isProduction() {
+		if(this.serverType != null && this.serverType.equalsIgnoreCase(PRODUCTION_SERVER)) { return true;}
+		return false;
+	}
+	
 	public static boolean isApplicationValid(String theApplication) {
 		if(theApplication.equalsIgnoreCase(ARC_CUSTOMER_APPLICATION) || theApplication.equalsIgnoreCase(ARC_MERCHANT_APPLICATION)) {
 			return true;

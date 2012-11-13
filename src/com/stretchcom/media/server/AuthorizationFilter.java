@@ -19,9 +19,11 @@ public class AuthorizationFilter extends Filter{
 	
 	protected int beforeHandle(Request request, Response response) {
 		if(validAuthentication(request)) {
+			log.info("filter continue");
 			return Filter.CONTINUE;
 		} else {
 			// return HTTP 401 status - unauthorized
+			log.info("unauthroized -- stop filter");
 			response.setStatus(Status.CLIENT_ERROR_UNAUTHORIZED);
 			return Filter.STOP;
 		}
@@ -59,9 +61,11 @@ public class AuthorizationFilter extends Filter{
 		if( (login.equals("arc") && token.equals("111jimjoenicktyleruntitled")) ||
 			 token.equals("test123")                                            ||
 			 token.equals("fruproducts")                                           ) {
+			log.info("token match successful");
 			return true;
 		}
 		
+		log.info("token match failed");
 		return false;
 	}
 }

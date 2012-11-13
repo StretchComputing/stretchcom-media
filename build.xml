@@ -167,7 +167,6 @@
 		<pathelement location="${dist.root}/client/activation.jar"/>
 		<pathelement location="${dist.root}/common/lib/jboss-jsr88.jar"/>
 		<pathelement location="${dist.root}/common/lib/cxf-rt-transports-http.jar"/>
-		<pathelement location="${dist.root}/server/default/deployers/resteasy.deployer/commons-codec-1.3.jar"/>
 		<pathelement location="${dist.root}/common/lib/jboss-jca.jar"/>
 		<pathelement location="${dist.root}/client/jboss-ejb3-proxy-clustered-client.jar"/>
 		<pathelement location="${dist.root}/common/lib/jboss-embedded-core.jar"/>
@@ -448,6 +447,7 @@
 		<pathelement location="WebContent/WEB-INF/lib/bcprov-jdk15-146.jar"/>
 		<pathelement location="WebContent/WEB-INF/lib/JavaPNS_2.2.jar"/>
 		<pathelement location="WebContent/WEB-INF/lib/log4j-1.2.15.jar"/>
+		<pathelement location="WebContent/WEB-INF/lib/commons-codec-1.7.jar"/>
 	</path>
 
 	<target name="deploy" depends="war">

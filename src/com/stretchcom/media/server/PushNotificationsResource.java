@@ -1,6 +1,7 @@
 package com.stretchcom.media.server;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -53,14 +54,14 @@ public class PushNotificationsResource extends ServerResource {
     // Handles 'Create Push Notification API'
     @Post("json")
     public JsonRepresentation post(Representation entity) {
-        log.info("in post");
+        log.debug("in post");
         return create_push(entity);
     }
 
     private JsonRepresentation create_push(Representation entity) {
         JSONObject jsonReturn = new JSONObject();
 
-        PushNotification pushNotification = null;
+        PushNotification pushNotification = new PushNotification();
         try {
         	JsonRepresentation jsonRep = extractPushNotificationFromJson(pushNotification, entity);
         	if(jsonRep != null) {return jsonRep;}
@@ -75,9 +76,10 @@ public class PushNotificationsResource extends ServerResource {
     
     private void sendPush(PushNotification thePushNotification) {
     	try {
-    		// TODO quick test, production = false
-    		String joeDeviceToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";
-			Push.alert("Hello World!", "ArcMerchantDevCert.p12", "keystore_password", false, joeDeviceToken);
+    		InputStream keyStoreStream = this.getClass().getResourceAsStream("/ArcMerchantDevCert.p12");
+    		// TODO only support one device in devices right now
+    		String deviceToken = thePushNotification.getDevices().get(0).getDeviceToken();
+			Push.alert(thePushNotification.getMessage(), keyStoreStream, "arc", thePushNotification.isProduction(), deviceToken);
 		} catch (CommunicationException e) {
 			log.debug("communication exception = " + e.getMessage());
 		} catch (KeystoreException e) {
