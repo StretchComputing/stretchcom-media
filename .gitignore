@@ -1,6 +1,7 @@
 # Compliled source #
 ####################
 *.class
+*.war
 *.symbolMap
 *.cache.html
 *auto.xml

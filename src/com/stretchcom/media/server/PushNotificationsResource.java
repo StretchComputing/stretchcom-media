@@ -76,7 +76,10 @@ public class PushNotificationsResource extends ServerResource {
     
     private void sendPush(PushNotification thePushNotification) {
     	try {
-    		InputStream keyStoreStream = this.getClass().getResourceAsStream("/ArcMerchantDevCert.p12");
+    		String keyStorePath = "/ArcMerchantDevCert.p12";
+    		if(thePushNotification.isProduction())  keyStorePath = "/ArcMerchantProdCert.p12";
+    		InputStream keyStoreStream = this.getClass().getResourceAsStream(keyStorePath);
+    		
     		// TODO only support one device in devices right now
     		String deviceToken = thePushNotification.getDevices().get(0).getDeviceToken();
 			Push.alert(thePushNotification.getMessage(), keyStoreStream, "arc", thePushNotification.isProduction(), deviceToken);
