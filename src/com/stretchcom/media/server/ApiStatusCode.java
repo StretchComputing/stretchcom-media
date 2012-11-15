@@ -13,7 +13,7 @@ public class ApiStatusCode {
 	public static final String DEVICES_REQUIRED = "303";
 	public static final String MESSAGE_REQUIRED = "304";
 	
-	public static final String INVALID_TYPE_PARAMETER = "400";
+	public static final String INVALID_PUSH_TYPE_PARAMETER = "400";
 	public static final String INVALID_APPLICATION_PARAMETER = "401";
 	public static final String INVALID_CLIENT_PARAMETER = "402";
 	public static final String INVALID_MESSAGE_PARAMETER = "403";

@@ -3,13 +3,20 @@ package com.stretchcom.media.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import javapns.Push;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
+import javapns.notification.PushNotificationPayload;
+import javapns.notification.PushedNotification;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,6 +39,9 @@ public class PushNotificationsResource extends ServerResource {
 	private String id;
 	private String name;
 	private String listStatus;
+	
+	public final static String KEY_STORE_PASSWORD = "arc";
+
 
     @Override
     protected void doInit() throws ResourceException {
@@ -76,17 +86,46 @@ public class PushNotificationsResource extends ServerResource {
     
     private void sendPush(PushNotification thePushNotification) {
     	try {
-    		String keyStorePath = "/ArcMerchantDevCert.p12";
-    		if(thePushNotification.isProduction())  keyStorePath = "/ArcMerchantProdCert.p12";
-    		InputStream keyStoreStream = this.getClass().getResourceAsStream(keyStorePath);
+    		// TODO assuming all clients are iOS right now
+    		// TODO not supporting badges and sounds yet
     		
-    		// TODO only support one device in devices right now
-    		String deviceToken = thePushNotification.getDevices().get(0).getDeviceToken();
-			Push.alert(thePushNotification.getMessage(), keyStoreStream, "arc", thePushNotification.isProduction(), deviceToken);
+    		// separate the deviceTokens into production and development
+    		List<String> developmentTokens = new ArrayList<String>();
+    		List<String> productionTokens = new ArrayList<String>();
+    		for(Device d : thePushNotification.getDevices()) {
+    			if(d.isProduction())	{productionTokens.add(d.getDeviceToken());}
+    			else					{developmentTokens.add(d.getDeviceToken());}
+    		}
+    		
+            PushNotificationPayload payload = PushNotificationPayload.complex();
+            payload.addAlert(thePushNotification.getMessage());
+
+            Map<String, String> cps = thePushNotification.getCustomPayloads();
+            if(cps != null) {
+            	for(String key : cps.keySet()) {
+                    payload.addCustomDictionary(key, cps.get(key));
+            	}
+            }
+            
+            List<PushedNotification> notifications = null;
+            String keyStore = null;
+            InputStream keyStoreStream = null;
+            if(developmentTokens.size() > 0) {
+            	keyStore = "/ArcMerchantDevCert.p12";
+            	keyStoreStream = this.getClass().getResourceAsStream(keyStore);
+            	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, false, developmentTokens);
+            }
+            if(productionTokens.size() > 0) {
+            	keyStore = "/ArcMerchantProdCert.p12";
+            	keyStoreStream = this.getClass().getResourceAsStream(keyStore);
+            	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, true, productionTokens);
+            }
 		} catch (CommunicationException e) {
 			log.debug("communication exception = " + e.getMessage());
 		} catch (KeystoreException e) {
 			log.debug("keystore exception = " + e.getMessage());
+		} catch (JSONException e) {
+			log.debug("json exception = " + e.getMessage());
 		}
     }
     
@@ -95,15 +134,6 @@ public class PushNotificationsResource extends ServerResource {
         try {
             JSONObject json = new JsonRepresentation(entity).getJsonObject();
 
-            if(json.has(ApiJson.TYPE)) {
-            	pushNotification.setServerType(json.getString(ApiJson.TYPE));
-            	if(!PushNotification.isTypeValid(pushNotification.getServerType())) {
-            		return Utility.apiError(this, ApiStatusCode.INVALID_TYPE_PARAMETER);
-            	}
-    		} else {
-            	return Utility.apiError(this, ApiStatusCode.TYPE_REQUIRED);
-            }
-            
             if(json.has(ApiJson.APPLICATION)) {
             	pushNotification.setApplication(json.getString(ApiJson.APPLICATION));
             	if(!PushNotification.isApplicationValid(pushNotification.getApplication())) {
@@ -118,11 +148,15 @@ public class PushNotificationsResource extends ServerResource {
     			JSONArray devicesJsonArray = json.getJSONArray(ApiJson.DEVICES);
     			int arraySize = devicesJsonArray.length();
     			log.debug("devices json array length = " + arraySize);
+    			if(arraySize == 0) {
+    				return Utility.apiError(this, ApiStatusCode.DEVICES_REQUIRED);
+    			}
+    			
     			for(int i=0; i<arraySize; i++) {
     				JSONObject deviceJsonObj = devicesJsonArray.getJSONObject(i);
     				Device d = new Device();
     				
-    				// both Client and DeviceId are required. If either is missing, silently ignore this pair
+    				// Client, DeviceId and PushType are required. If any are missing, silently ignore this grouping
     				if(deviceJsonObj.has(ApiJson.CLIENT)) {
     					d.setClient(deviceJsonObj.getString(ApiJson.CLIENT));
     	            	if(!PushNotification.isClientValid(d.getClient())) {
@@ -136,13 +170,22 @@ public class PushNotificationsResource extends ServerResource {
     				} else {
     					continue;
     				}
+    				if(deviceJsonObj.has(ApiJson.PUSH_TYPE)) {
+    					d.setPushType(deviceJsonObj.getString(ApiJson.PUSH_TYPE));
+    	            	if(!Device.isPushTypeValid(d.getPushType())) {
+    	            		return Utility.apiError(this, ApiStatusCode.INVALID_PUSH_TYPE_PARAMETER);
+    	            	}
+    				} else {
+    					continue;
+    				}
     				devices.add(d);
     			}
+    			pushNotification.setDevices(devices);
     		} else {
             	return Utility.apiError(this, ApiStatusCode.DEVICES_REQUIRED);
             }
             
-            if(json.has(ApiJson.MESSAGE	)) {
+            if(json.has(ApiJson.MESSAGE)) {
             	pushNotification.setMessage(json.getString(ApiJson.MESSAGE));
             	if(pushNotification.getMessage().trim().length() == 0) {
             		return Utility.apiError(this, ApiStatusCode.INVALID_MESSAGE_PARAMETER);
@@ -150,6 +193,31 @@ public class PushNotificationsResource extends ServerResource {
     		} else {
             	return Utility.apiError(this, ApiStatusCode.MESSAGE_REQUIRED);
             }
+            
+            if(json.has(ApiJson.CUSTOM_PAYLOAD)) {
+            	String payloadKey = null;
+            	String payloadValue = null;
+                Map<String, String> customPayloads = new HashMap<String, String>();
+    			JSONArray customPayloadsJsonArray = json.getJSONArray(ApiJson.CUSTOM_PAYLOAD);
+    			int arraySize = customPayloadsJsonArray.length();
+    			log.debug("custom payload json array length = " + arraySize);
+    			for(int i=0; i<arraySize; i++) {
+    				JSONObject customPayloadJsonObj = customPayloadsJsonArray.getJSONObject(i);
+    				
+    				if(customPayloadJsonObj.has(ApiJson.PAYLOAD_KEY)) {
+    					payloadKey = customPayloadJsonObj.getString(ApiJson.PAYLOAD_KEY);
+    				} else {
+    					continue;
+    				}
+    				if(customPayloadJsonObj.has(ApiJson.PAYLOAD_VALUE)) {
+    					payloadValue = customPayloadJsonObj.getString(ApiJson.PAYLOAD_VALUE);
+    				} else {
+    					continue;
+    				}
+    				customPayloads.put(payloadKey, payloadValue);
+    			}
+            	pushNotification.setCustomPayloads(customPayloads);
+    		}
         } catch (JSONException e) {
 			log.exception("PushNotificationResource:extractPushNotificationFromJson", e.getMessage(), e);
             this.setStatus(Status.SERVER_ERROR_INTERNAL);

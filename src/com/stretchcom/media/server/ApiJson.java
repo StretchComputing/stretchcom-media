@@ -15,6 +15,10 @@ public class ApiJson {
 	public final static String APPLICATION = "Application";
 	public final static String DEVICES = "Devices";
 	public final static String CLIENT= "Client";
-	public final static String DEVICE_TOKEN = "DeviceId";
+	public final static String DEVICE_TOKEN = "DeviceToken";
+	public final static String PUSH_TYPE = "PushType";
 	public final static String MESSAGE = "Message";
+	public final static String CUSTOM_PAYLOAD = "CustomPayload";
+	public final static String PAYLOAD_KEY = "PayloadKey";
+	public final static String PAYLOAD_VALUE = "PayloadValue";
 }

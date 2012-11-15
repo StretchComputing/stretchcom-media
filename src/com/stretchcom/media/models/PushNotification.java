@@ -1,7 +1,9 @@
 package com.stretchcom.media.models;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import com.stretchcom.media.server.RskyboxClient;
@@ -10,29 +12,18 @@ public class PushNotification {
 	//private static final Logger log = Logger.getLogger(PushNotification.class.getName());
 	private RskyboxClient log = new RskyboxClient();
 	
-	public final static String PRODUCTION_SERVER = "Production";
-	public final static String DEVELOPMENT_SERVER = "Development";
-	
 	public final static String ARC_CUSTOMER_APPLICATION = "ArcCustomer";
 	public final static String ARC_MERCHANT_APPLICATION = "ArcMerchant";
 	
 	public final static String IOS_CLIENT = "iOS";
 	public final static String ANDROID_CLIENT = "Android";
 
-	private String serverType;
 	private String application;
 	private String message;
 	private List<Device> devices = new ArrayList<Device>();
+	private Map<String, String> customPayloads = new HashMap<String, String>();
 
 	public PushNotification() {		
-	}
-	
-	public String getServerType() {
-		return serverType;
-	}
-
-	public void setServerType(String serverType) {
-		this.serverType = serverType;
 	}
 
 	public String getApplication() {
@@ -59,18 +50,6 @@ public class PushNotification {
 		this.devices = devices;
 	}
 	
-	public static boolean isTypeValid(String theType) {
-		if(theType.equalsIgnoreCase(PRODUCTION_SERVER) || theType.equalsIgnoreCase(DEVELOPMENT_SERVER)) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isProduction() {
-		if(this.serverType != null && this.serverType.equalsIgnoreCase(PRODUCTION_SERVER)) { return true;}
-		return false;
-	}
-	
 	public static boolean isApplicationValid(String theApplication) {
 		if(theApplication.equalsIgnoreCase(ARC_CUSTOMER_APPLICATION) || theApplication.equalsIgnoreCase(ARC_MERCHANT_APPLICATION)) {
 			return true;
@@ -83,6 +62,14 @@ public class PushNotification {
 			return true;
 		}
 		return false;
+	}
+
+	public Map<String, String> getCustomPayloads() {
+		return customPayloads;
+	}
+
+	public void setCustomPayloads(Map<String, String> customPayloads) {
+		this.customPayloads = customPayloads;
 	}
 
 }
