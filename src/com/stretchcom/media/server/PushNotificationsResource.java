@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import javax.servlet.ServletContext;
+
 import javapns.Push;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
@@ -110,22 +112,32 @@ public class PushNotificationsResource extends ServerResource {
             List<PushedNotification> notifications = null;
             String keyStore = null;
             InputStream keyStoreStream = null;
+            ServletContext sc = (ServletContext) getContext().getServerDispatcher().getContext().getAttributes().get( "org.restlet.ext.servlet.ServletContext" );
             if(developmentTokens.size() > 0) {
-            	keyStore = "/ArcMerchantDevCert.p12";
-            	keyStoreStream = this.getClass().getResourceAsStream(keyStore);
+            	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
+            		keyStore = "/ArcDevCertificate.p12";
+            	} else {
+            		keyStore = "/ArcMerchantDevCert.p12";
+            	}
+            	//keyStoreStream = this.getClass().getResourceAsStream(keyStore);
+            	keyStoreStream = sc.getResourceAsStream(keyStore);
             	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, false, developmentTokens);
             }
             if(productionTokens.size() > 0) {
-            	keyStore = "/ArcMerchantProdCert.p12";
-            	keyStoreStream = this.getClass().getResourceAsStream(keyStore);
+            	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
+            		keyStore = "/ArcProdCertificate.p12";
+            	} else {
+            		keyStore = "/ArcMerchantProdCert.p12";
+            	}
+            	keyStoreStream = sc.getResourceAsStream(keyStore);
             	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, true, productionTokens);
             }
 		} catch (CommunicationException e) {
-			log.debug("communication exception = " + e.getMessage());
+			log.exception("PushNotificationResource:sendPush communication exception", e.getMessage(), e);
 		} catch (KeystoreException e) {
-			log.debug("keystore exception = " + e.getMessage());
+			log.exception("PushNotificationResource:sendPush keystore exception", e.getMessage(), e);
 		} catch (JSONException e) {
-			log.debug("json exception = " + e.getMessage());
+			log.exception("PushNotificationResource:sendPush json exception", e.getMessage(), e);
 		}
     }
     
