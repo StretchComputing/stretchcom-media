@@ -14,12 +14,15 @@ public class PushNotification {
 	
 	public final static String ARC_CUSTOMER_APPLICATION = "ArcCustomer";
 	public final static String ARC_MERCHANT_APPLICATION = "ArcMerchant";
+	public final static String RTEAM_APPLICATION = "rTeam";
 	
 	public final static String IOS_CLIENT = "iOS";
 	public final static String ANDROID_CLIENT = "Android";
 
 	private String application;
 	private String message;
+	private Integer badge;
+
 	private List<Device> devices = new ArrayList<Device>();
 	private Map<String, String> customPayloads = new HashMap<String, String>();
 
@@ -70,6 +73,14 @@ public class PushNotification {
 
 	public void setCustomPayloads(Map<String, String> customPayloads) {
 		this.customPayloads = customPayloads;
+	}
+
+	public Integer getBadge() {
+		return badge;
+	}
+
+	public void setBadge(Integer badge) {
+		this.badge = badge;
 	}
 
 }

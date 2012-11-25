@@ -18,6 +18,7 @@ public class ApiJson {
 	public final static String DEVICE_TOKEN = "DeviceToken";
 	public final static String PUSH_TYPE = "PushType";
 	public final static String MESSAGE = "Message";
+	public final static String BADGE = "Badge";
 	public final static String CUSTOM_PAYLOAD = "CustomPayload";
 	public final static String PAYLOAD_KEY = "PayloadKey";
 	public final static String PAYLOAD_VALUE = "PayloadValue";

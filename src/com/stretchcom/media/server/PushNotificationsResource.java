@@ -3,22 +3,17 @@ package com.stretchcom.media.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-
-import javax.servlet.ServletContext;
 
 import javapns.Push;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
 import javapns.notification.PushNotificationPayload;
 import javapns.notification.PushedNotification;
+
+import javax.servlet.ServletContext;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,7 +37,8 @@ public class PushNotificationsResource extends ServerResource {
 	private String name;
 	private String listStatus;
 	
-	public final static String KEY_STORE_PASSWORD = "arc";
+	public final static String ARC_KEY_STORE_PASSWORD = "arc";
+	public final static String RTEAM_KEY_STORE_PASSWORD = "rteam";
 
 
     @Override
@@ -88,8 +84,7 @@ public class PushNotificationsResource extends ServerResource {
     
     private void sendPush(PushNotification thePushNotification) {
     	try {
-    		// TODO assuming all clients are iOS right now
-    		// TODO not supporting badges and sounds yet
+    		// TODO not supporting sounds yet
     		
     		// separate the deviceTokens into production and development
     		List<String> developmentTokens = new ArrayList<String>();
@@ -101,6 +96,7 @@ public class PushNotificationsResource extends ServerResource {
     		
             PushNotificationPayload payload = PushNotificationPayload.complex();
             payload.addAlert(thePushNotification.getMessage());
+            if(thePushNotification.getBadge() != null) payload.addBadge(thePushNotification.getBadge());
 
             Map<String, String> cps = thePushNotification.getCustomPayloads();
             if(cps != null) {
@@ -113,24 +109,35 @@ public class PushNotificationsResource extends ServerResource {
             String keyStore = null;
             InputStream keyStoreStream = null;
             ServletContext sc = (ServletContext) getContext().getServerDispatcher().getContext().getAttributes().get( "org.restlet.ext.servlet.ServletContext" );
+            String keyStorePassword = null;
             if(developmentTokens.size() > 0) {
             	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
             		keyStore = "/ArcDevCertificate.p12";
-            	} else {
+            		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_MERCHANT_APPLICATION)) {
             		keyStore = "/ArcMerchantDevCert.p12";
+            		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.RTEAM_APPLICATION))  {
+            		keyStore = "/rTeamDevCertificate.p12";
+            		keyStorePassword = RTEAM_KEY_STORE_PASSWORD;
             	}
             	//keyStoreStream = this.getClass().getResourceAsStream(keyStore);
             	keyStoreStream = sc.getResourceAsStream(keyStore);
-            	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, false, developmentTokens);
+            	notifications = Push.payload(payload, keyStoreStream, keyStorePassword, false, developmentTokens);
             }
             if(productionTokens.size() > 0) {
             	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
             		keyStore = "/ArcProdCertificate.p12";
-            	} else {
+            		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_MERCHANT_APPLICATION)) {
             		keyStore = "/ArcMerchantProdCert.p12";
+            		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.RTEAM_APPLICATION)) {
+            		keyStore = "/rTeamProdCertificate.p12";
+            		keyStorePassword = RTEAM_KEY_STORE_PASSWORD;
             	}
             	keyStoreStream = sc.getResourceAsStream(keyStore);
-            	notifications = Push.payload(payload, keyStoreStream, KEY_STORE_PASSWORD, true, productionTokens);
+            	notifications = Push.payload(payload, keyStoreStream, keyStorePassword, true, productionTokens);
             }
 		} catch (CommunicationException e) {
 			log.exception("PushNotificationResource:sendPush communication exception", e.getMessage(), e);
@@ -206,6 +213,13 @@ public class PushNotificationsResource extends ServerResource {
             	return Utility.apiError(this, ApiStatusCode.MESSAGE_REQUIRED);
             }
             
+            if(json.has(ApiJson.BADGE)) {
+            	try {
+                	pushNotification.setBadge(json.getInt(ApiJson.BADGE));
+            	} catch(JSONException e) {
+            		return Utility.apiError(this, ApiStatusCode.INVALID_BADGE_PARAMETER);
+            	}
+    		}            
             if(json.has(ApiJson.CUSTOM_PAYLOAD)) {
             	String payloadKey = null;
             	String payloadValue = null;
