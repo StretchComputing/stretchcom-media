@@ -22,8 +22,12 @@ public class ClientTest {
     //private static final String HTTPS_BASE_URL = "https://rskybox-stretchcom.appspot.com/";
     //private static final String HTTPS_BASE_URL = "https://rskybox-staging.appspot.com/";
     private static final String HTTPS_BASE_URL = "http://localhost:8080/rTeamSms/";  //development server.  Run->Run As->Web Application
-    private static final String REST_BASE_URL = HTTPS_BASE_URL + "rest/v1/";
+    //private static final String HTTPS_BASE_URL = "http://50.57.64.254:8443/rTeamSms/";  //pr0duction server.  Run->Run As->Web Application
+    
+    //private static final String REST_BASE_URL = HTTPS_BASE_URL + "rest/v1/";
+    private static final String REST_BASE_URL = HTTPS_BASE_URL + "";
 
+    //private static final String PUSH_NOTIFICATION_RESOURCE_URI = "vitals";
     private static final String PUSH_NOTIFICATION_RESOURCE_URI = "pushNotifications";
     private static Boolean isLoggingEnabled = true;
 
@@ -40,21 +44,27 @@ public class ClientTest {
 
     public static void main(String[] args) throws Exception {
         isLoggingEnabled = true;
-        String joesDevToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";
+//        String joesDevToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";  // Merchant App
+//        String application = "ArcMerchant";
 
+//        String joesDevToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";  // Arc
+//        String application = "ArcCustomer";
+
+        String joesDevToken = "BE2BC710DB1454FC7314163DFFAEA64274C91A186FE88E7E2A5893B3E53A44FB";  // rTeam
+        String application = "rTeam";
         
         // ========================
         // CREATE PUSH NOTIFICATION
         // ========================
         // PARAMS:: String verifyCreatePushNotification(String theName, String theVersion, String theUserToken)
-        String type = "Development";
-        String application = "ArcMerchant";
         List<String> clients = new ArrayList<String>();
         clients.add("iOS");
-        List<String> deviceIds = new ArrayList<String>();
-        deviceIds.add(joesDevToken);
-        String message = "table 10 just gave you a 5 out of 5";
-        verifyCreatePushNotification(type, application, clients, deviceIds, message);
+        List<String> deviceTokens = new ArrayList<String>();
+        deviceTokens.add(joesDevToken);
+        List<String> pushTypes = new ArrayList<String>();
+        pushTypes.add("Development");
+        String message = "rTeam is cool";
+        verifyCreatePushNotification(application, clients, deviceTokens, pushTypes, message);
 
         // ========================
         // GET LIST OF APPLICATIONS
@@ -78,23 +88,25 @@ public class ClientTest {
         //verifyUpdateApplication(applicationId, "1.1", token1);
     }
 
-    private static JSONObject verifyCreatePushNotification(String theType, String theApplication, List<String> theClients, List<String> theDeviceIds, String theMessage) {
+    private static JSONObject verifyCreatePushNotification(String theApplication, List<String> theClients, List<String> theDeviceIds, List<String> thePushTypes, String theMessage) {
 		if(isLoggingEnabled) System.out.println("\n\n verifyCreatePushNotification() starting .....\n");
 		String urlStr = REST_BASE_URL + PUSH_NOTIFICATION_RESOURCE_URI;
 		JSONObject json = new JSONObject();
 		try {
-		    if(theType != null) json.put("Type", theType);
 		    if(theApplication != null) json.put("Application", theApplication);
 		    if(theMessage != null) json.put("Message", theMessage);
-		    if(theClients != null && theDeviceIds != null) {
+		    if(theClients != null && theDeviceIds != null && thePushTypes != null) {
 				JSONArray devicesJsonArray = new JSONArray();
 				for(int i=0; i< theClients.size(); i++) {
 					JSONObject deviceJsonObj = new JSONObject();
 					deviceJsonObj.put("Client", theClients.get(i));
-					deviceJsonObj.put("DeviceId", theDeviceIds.get(i));
+					deviceJsonObj.put("DeviceToken", theDeviceIds.get(i));
+					deviceJsonObj.put("PushType", thePushTypes.get(i));
 					devicesJsonArray.put(deviceJsonObj);
 				}
 				if(devicesJsonArray.length() > 0) json.put("Devices", devicesJsonArray);
+				
+				// TODO add custom payload support
 		  }
            
 
