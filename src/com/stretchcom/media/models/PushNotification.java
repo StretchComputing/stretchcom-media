@@ -54,7 +54,7 @@ public class PushNotification {
 	}
 	
 	public static boolean isApplicationValid(String theApplication) {
-		if(theApplication.equalsIgnoreCase(ARC_CUSTOMER_APPLICATION) || theApplication.equalsIgnoreCase(ARC_MERCHANT_APPLICATION)) {
+		if(theApplication.equalsIgnoreCase(ARC_CUSTOMER_APPLICATION) || theApplication.equalsIgnoreCase(ARC_MERCHANT_APPLICATION) || theApplication.equalsIgnoreCase(RTEAM_APPLICATION)) {
 			return true;
 		}
 		return false;
