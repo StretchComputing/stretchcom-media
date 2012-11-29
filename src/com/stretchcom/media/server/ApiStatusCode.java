@@ -10,7 +10,7 @@ public class ApiStatusCode {
 	public static final String SUBJECT_BODY_AND_EMAIL_ADDRESSES_REQUIRED = "300";
 	public static final String APPLICATION_REQUIRED = "302";
 	public static final String DEVICES_REQUIRED = "303";
-	public static final String MESSAGE_REQUIRED = "304";
+	public static final String MESSAGE_OR_BADGE_REQUIRED = "304";
 	
 	public static final String INVALID_PUSH_TYPE_PARAMETER = "400";
 	public static final String INVALID_APPLICATION_PARAMETER = "401";

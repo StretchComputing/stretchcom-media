@@ -204,13 +204,14 @@ public class PushNotificationsResource extends ServerResource {
             	return Utility.apiError(this, ApiStatusCode.DEVICES_REQUIRED);
             }
             
+            boolean messageNotPresent = false;
             if(json.has(ApiJson.MESSAGE)) {
             	pushNotification.setMessage(json.getString(ApiJson.MESSAGE));
             	if(pushNotification.getMessage().trim().length() == 0) {
             		return Utility.apiError(this, ApiStatusCode.INVALID_MESSAGE_PARAMETER);
             	}
     		} else {
-            	return Utility.apiError(this, ApiStatusCode.MESSAGE_REQUIRED);
+    			messageNotPresent = true;
             }
             
             if(json.has(ApiJson.BADGE)) {
@@ -219,7 +220,10 @@ public class PushNotificationsResource extends ServerResource {
             	} catch(JSONException e) {
             		return Utility.apiError(this, ApiStatusCode.INVALID_BADGE_PARAMETER);
             	}
-    		}            
+    		} else if(messageNotPresent) {
+            	return Utility.apiError(this, ApiStatusCode.MESSAGE_OR_BADGE_REQUIRED);
+    		}
+            
             if(json.has(ApiJson.CUSTOM_PAYLOAD)) {
             	String payloadKey = null;
             	String payloadValue = null;
