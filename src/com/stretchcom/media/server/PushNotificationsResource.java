@@ -114,12 +114,15 @@ public class PushNotificationsResource extends ServerResource {
             	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
             		keyStore = "/ArcDevCertificate.p12";
             		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            		log.info("processing push for Arc development");
             	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_MERCHANT_APPLICATION)) {
             		keyStore = "/ArcMerchantDevCert.p12";
             		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            		log.info("processing push for Merchant App development");
             	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.RTEAM_APPLICATION))  {
             		keyStore = "/rTeamDevCertificate.p12";
             		keyStorePassword = RTEAM_KEY_STORE_PASSWORD;
+            		log.info("processing push for rTeam development");
             	}
             	//keyStoreStream = this.getClass().getResourceAsStream(keyStore);
             	keyStoreStream = sc.getResourceAsStream(keyStore);
@@ -129,12 +132,15 @@ public class PushNotificationsResource extends ServerResource {
             	if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_CUSTOMER_APPLICATION)) {
             		keyStore = "/ArcProdCertificate.p12";
             		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            		log.info("processing push for Arc production");
             	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.ARC_MERCHANT_APPLICATION)) {
             		keyStore = "/ArcMerchantProdCert.p12";
             		keyStorePassword = ARC_KEY_STORE_PASSWORD;
+            		log.info("processing push for Merchant App production");
             	} else if(thePushNotification.getApplication().equalsIgnoreCase(PushNotification.RTEAM_APPLICATION)) {
             		keyStore = "/rTeamProdCertificate.p12";
             		keyStorePassword = RTEAM_KEY_STORE_PASSWORD;
+            		log.info("processing push for rTeam production");
             	}
             	keyStoreStream = sc.getResourceAsStream(keyStore);
             	notifications = Push.payload(payload, keyStoreStream, keyStorePassword, true, productionTokens);
