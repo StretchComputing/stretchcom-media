@@ -90,8 +90,8 @@ public class PushNotificationsResource extends ServerResource {
     		List<String> developmentTokens = new ArrayList<String>();
     		List<String> productionTokens = new ArrayList<String>();
     		for(Device d : thePushNotification.getDevices()) {
-    			if(d.isProduction())	{productionTokens.add(d.getDeviceToken());}
-    			else					{developmentTokens.add(d.getDeviceToken());}
+    			if(d.isProduction())	{String pt = d.getDeviceToken(); productionTokens.add(pt); log.info("prd token added: " + pt);}
+    			else					{String dt = d.getDeviceToken(); developmentTokens.add(dt); log.info("dev token added: " + dt);}
     		}
     		
             PushNotificationPayload payload = PushNotificationPayload.complex();
@@ -145,6 +145,7 @@ public class PushNotificationsResource extends ServerResource {
             	keyStoreStream = sc.getResourceAsStream(keyStore);
             	notifications = Push.payload(payload, keyStoreStream, keyStorePassword, true, productionTokens);
             }
+        	logPushNotifications(notifications);
 		} catch (CommunicationException e) {
 			log.exception("PushNotificationResource:sendPush communication exception", e.getMessage(), e);
 		} catch (KeystoreException e) {
@@ -152,6 +153,12 @@ public class PushNotificationsResource extends ServerResource {
 		} catch (JSONException e) {
 			log.exception("PushNotificationResource:sendPush json exception", e.getMessage(), e);
 		}
+    }
+    
+    private void logPushNotifications(List<PushedNotification> theNotifications) {
+    	for(PushedNotification pn : theNotifications) {
+    		log.info("returned notification: " + pn.toString());
+    	}
     }
     
     // @Returns null if successful or JsonReprentation that contains the error code
