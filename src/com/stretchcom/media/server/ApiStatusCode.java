@@ -17,6 +17,7 @@ public class ApiStatusCode {
 	public static final String INVALID_CLIENT_PARAMETER = "402";
 	public static final String INVALID_MESSAGE_PARAMETER = "403";
 	public static final String INVALID_BADGE_PARAMETER = "404";
+	public static final String INVALID_EMAIL_TYPE_PARAMETER = "405";
 	
 	public static final String PHONE_NUMBER_AND_MOBILE_CARRIER_ID_MUST_BE_SPECIFIED_TOGETHER = "500";
 	

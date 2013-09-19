@@ -25,6 +25,9 @@ import org.restlet.resource.ServerResource;
 public class EmailResource extends ServerResource {
 	private static final Logger log = Logger.getLogger(EmailResource.class.getName());
 	
+	private static final String EMAIL = "email";
+	private static final String TEXT = "text";
+	
 	//String messageArchiver;
 
     @Override  
@@ -68,6 +71,11 @@ public class EmailResource extends ServerResource {
 			if(json.has("body")) {
 				body = json.getString("body");
 			}
+    		
+			String type = EMAIL;
+			if(json.has("type")) {
+				body = json.getString("type");
+			}
 			
 			// Enforce Rules
 			if(subject == null || subject.length() == 0 || body ==  null || body.length() == 0 ||
@@ -76,12 +84,17 @@ public class EmailResource extends ServerResource {
 				log.info("required JSON field missing");
 			}
 			
+			if(!type.equalsIgnoreCase(EMAIL) && !type.equalsIgnoreCase(TEXT)) {
+				apiStatus = ApiStatusCode.INVALID_EMAIL_TYPE_PARAMETER;
+				log.info("unsupported email type = " + type);
+			}
+			
 			if(!apiStatus.equals(ApiStatusCode.SUCCESS) || !this.getStatus().equals(Status.SUCCESS_CREATED)) {
 				jsonReturn.put("apiStatus", apiStatus);
 				return new JsonRepresentation(jsonReturn);
 			}
 
-    		apiStatus = buildAndSendEmail(subject, body, toEmailAddress, fromEmailAddress);
+    		apiStatus = buildAndSendEmail(subject, body, toEmailAddress, fromEmailAddress, type);
     	} catch (IOException e) {
 			log.severe("error extracting JSON object from Post");
 			this.setStatus(Status.SERVER_ERROR_INTERNAL);
@@ -100,7 +113,7 @@ public class EmailResource extends ServerResource {
 		return new JsonRepresentation(jsonReturn);
     }
     
-    private String buildAndSendEmail(String theSubject, String theBody, String theToEmailAddress, String theFromEmailAddress) {
+    private String buildAndSendEmail(String theSubject, String theBody, String theToEmailAddress, String theFromEmailAddress, String theType) {
 		// Get system properties
 		Properties properties = System.getProperties();
 
@@ -124,7 +137,12 @@ public class EmailResource extends ServerResource {
 	        	log.info("setting subject to ...");
 	        }
 	        msg.setSubject(theSubject);
-	        msg.setContent(theBody, "text/html");
+	        
+	        String contentType = "text/html";
+	        if(theType.equalsIgnoreCase(TEXT)) {
+	        	contentType = "text";
+	        }
+	        msg.setContent(theBody, contentType);
 	        log.info("sending email to: " + theToEmailAddress + " with subject: " + theSubject);
 	        Transport.send(msg);
 	    } catch (AddressException e) {
