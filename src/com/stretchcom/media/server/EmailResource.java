@@ -74,7 +74,7 @@ public class EmailResource extends ServerResource {
     		
 			String type = EMAIL;
 			if(json.has("type")) {
-				body = json.getString("type");
+				type = json.getString("type");
 			}
 			
 			// Enforce Rules
@@ -140,7 +140,7 @@ public class EmailResource extends ServerResource {
 	        
 	        String contentType = "text/html";
 	        if(theType.equalsIgnoreCase(TEXT)) {
-	        	contentType = "text";
+	        	contentType = "text/plain";
 	        }
 	        msg.setContent(theBody, contentType);
 	        log.info("sending email to: " + theToEmailAddress + " with subject: " + theSubject);
